@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Room</title>
+    <table>
+        <tr>
+            <td>
+                <textarea id="chatFrame" rows="10" cols="50"></textarea>
+                <textarea id="userFrame" rows="10" cols="10"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td><input id="msg" type="text" size="90">
+                <button onclick="connSend()">Send</button>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <button onclick="connOpen()">Connect</button>
+                <button onclick="connClose()">Close</button>
+            </td>
+        </tr>
+
+    </table>
+</head>
+<body>
+
+</body>
+<script language="JavaScript" type="text/javascript">
+    var socket = null;
+
+    function connClose() {
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.close();
+        } else {
+            alert('Connect plz');
+        }
+    }
+
+    function connSend() {
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send($('#msg').val());
+            $('#msg').val('');
+        } else {
+            alert('Connect plz');
+        }
+    }
+
+    function connOpen() {
+        if (socket == null || socket.readyState === WebSocket.CLOSED) {
+            if (window.WebSocket) {
+                socket = new WebSocket('ws://localhost:8080/websocket');
+
+                socket.onopen = function (ev) {
+                    // appendChat('Connection established!');
+                    socket.send("내가 왔다.");
+                };
+
+                socket.onmessage = function (ev) {
+                    if (typeof ev.data === 'string') {
+                        var rData = JSON.parse(ev.data);
+                        var users = rData.users;
+                        var user = rData.user;
+                        var text = rData.text;
+
+                        appendChat(user, text);
+                        addUsers(users);
+
+                    } else {
+                        console.log('error');
+                    }
+                };
+
+                socket.onclose = function (ev) {
+                    if (socket.readyState == WebSocket.CLOSED) {
+                        appendChat('', 'Connection closed!');
+                    }
+                };
+
+                socket.onerror = function (ev) {
+                    appendChat('', 'Socket error!');
+                };
+            }
+
+        }
+    }
+
+    function appendChat(user, content) {
+        var chatContent = $('#chatFrame').text();
+        if (chatContent != '') chatContent = chatContent.concat('\n');
+        if (user != '') chatContent = chatContent.concat(user + " : ");
+        $('#chatFrame').text(chatContent.concat(content));
+        console.log('');
+    }
+
+    function addUsers(users) {
+        var usrStr = "";
+        for (var index in users) {
+            usrStr = usrStr.concat(users[index]).concat("\n");
+        }
+        $('#userFrame').text(usrStr);
+    }
+
+</script>
+</html>
